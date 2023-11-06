@@ -1,11 +1,11 @@
-### 🔗 Mentor Plus
+### 🔗 Task Management Server V2
 
-Mentor Pro is an online mentorship platform that brings mentors and students together, nurturing a supportive space for the exchange of knowledge and personal development. Our platform allows students to book mentorship sessions for 1, 2, or 3 hours, and users can also publish blog posts to share valuable insights and experiences.
+Live Link: [https://task-management-v2-client.vercel.app](https://task-management-v2-client.vercel.app)
 
-Live Link: [https://mentor-plus.vercel.app](https://mentor-plus.vercel.app)
+Server Link: [https://task-management-v2-ruddy.vercel.app](https://task-management-v2-ruddy.vercel.app)
 
-Client Repository: [https://github.com/sifatullahsu/mentor-pro](https://github.com/sifatullahsu/mentor-pro)
+Client Repository: [https://github.com/sifatullahsu/task-management-v2](https://github.com/sifatullahsu/task-management-v2)
 
-Server Repository: [https://github.com/sifatullahsu/mentor-pro-server](https://github.com/sifatullahsu/mentor-pro-server)
+Server Repository: [https://github.com/sifatullahsu/task-management-server-v2](https://github.com/sifatullahsu/task-management-server-v2)
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sifatullahsu)
