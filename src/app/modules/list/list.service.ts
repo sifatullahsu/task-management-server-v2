@@ -65,6 +65,15 @@ const deleteData = async (id: string): Promise<iList | null> => {
     // step 02: Delete list by _id
     const result = await List.findByIdAndDelete(id, { session })
 
+    const { owner, position } = result!.toObject()
+
+    // step 03: Update list position to -1
+    await List.updateMany(
+      { $and: [{ owner: { $eq: owner } }, { position: { $gt: position } }] },
+      { $inc: { position: -1 } },
+      { session }
+    )
+
     await session.commitTransaction()
     await session.endSession()
 

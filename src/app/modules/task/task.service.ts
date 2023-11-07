@@ -1,4 +1,5 @@
 import httpStatus from 'http-status'
+import mongoose from 'mongoose'
 import { IQueryMaker } from 'mongoose-query-maker'
 import ApiError from '../../../error/ApiError'
 import { iMeta, iReturnWithMeta } from '../../../global/types'
@@ -62,9 +63,32 @@ const updateData = async (id: string, data: Partial<iTask>): Promise<iTask | nul
 }
 
 const deleteData = async (id: string): Promise<iTask | null> => {
-  const result = await Task.findByIdAndDelete(id)
+  const session = await mongoose.startSession()
 
-  return result
+  try {
+    session.startTransaction()
+
+    // step 01: Delete Task by _id
+    const result = await Task.findByIdAndDelete(id, { session })
+
+    const { owner, list, position } = result!.toObject()
+
+    // step 02: Update list position to -1
+    await Task.updateMany(
+      { $and: [{ owner: { $eq: owner } }, { list: { $eq: list } }, { position: { $gt: position } }] },
+      { $inc: { position: -1 } },
+      { session }
+    )
+
+    await session.commitTransaction()
+    await session.endSession()
+
+    return result
+  } catch (error) {
+    await session.abortTransaction()
+    await session.endSession()
+    throw error
+  }
 }
 
 export const TaskService = {
