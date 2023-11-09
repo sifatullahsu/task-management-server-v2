@@ -54,12 +54,26 @@ const getData = async (id: string): Promise<iTask | null> => {
 }
 
 const updateData = async (id: string, data: Partial<iTask>): Promise<iTask | null> => {
-  const result = await Task.findByIdAndUpdate(id, data, {
-    runValidators: true,
-    new: true
-  })
+  const session = await mongoose.startSession()
 
-  return result
+  try {
+    session.startTransaction()
+
+    const result = await Task.findByIdAndUpdate(id, data, {
+      runValidators: true,
+      new: true,
+      session
+    })
+
+    await session.commitTransaction()
+    await session.endSession()
+
+    return result
+  } catch (error) {
+    await session.abortTransaction()
+    await session.endSession()
+    throw error
+  }
 }
 
 const deleteData = async (id: string): Promise<iTask | null> => {

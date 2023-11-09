@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose, { FilterQuery } from 'mongoose'
 import { IQueryMaker } from 'mongoose-query-maker'
 import { iMeta, iReturnWithMeta } from '../../../global/types'
 import { iJwtUser } from '../../../interface'
@@ -45,12 +45,68 @@ const getData = async (id: string): Promise<iList | null> => {
 }
 
 const updateData = async (id: string, data: Partial<iList>): Promise<iList | null> => {
-  const result = await List.findByIdAndUpdate(id, data, {
-    runValidators: true,
-    new: true
-  })
+  const session = await mongoose.startSession()
 
-  return result
+  try {
+    session.startTransaction()
+
+    if (data.position) {
+      // Get the previous data of the document being updated
+      const previous = await List.findById(id, {}, { session })
+
+      if (!previous) {
+        throw new Error('Data not found.')
+      }
+
+      const { _id, owner, position } = previous
+
+      // Find the maximum position for documents with the same owner
+      const maxPositionDoc = await List.findOne({ owner }, {}, { sort: { position: -1 }, session })
+      const maxPosition = maxPositionDoc ? maxPositionDoc.position : 0
+
+      if (data.position !== position) {
+        if (data.position > maxPosition) {
+          throw new Error('Cannot move the document beyond the maximum position.')
+        }
+
+        // Determine whether to increment or decrement positions
+        const increment = data.position > position ? -1 : 1
+
+        // Define the query to update positions for affected documents
+        const query: FilterQuery<iList> = {
+          $and: [
+            { owner: { $eq: owner } },
+            { _id: { $ne: _id } },
+            {
+              position:
+                increment === 1
+                  ? { $gte: data.position, $lte: position }
+                  : { $gt: position, $lte: data.position }
+            }
+          ]
+        }
+
+        // Use updateMany to adjust positions for affected documents
+        await List.updateMany(query, { $inc: { position: increment } }, { session })
+      }
+    }
+
+    // Update the document with the provided data
+    const result = await List.findByIdAndUpdate(id, data, {
+      runValidators: true,
+      new: true,
+      session
+    })
+
+    await session.commitTransaction()
+    await session.endSession()
+
+    return result
+  } catch (error) {
+    await session.abortTransaction()
+    await session.endSession()
+    throw error
+  }
 }
 
 const deleteData = async (id: string): Promise<iList | null> => {

@@ -10,7 +10,8 @@ const createData = z.object({
 
 const updateData = z.object({
   body: z.object({
-    title: z.string().optional()
+    title: z.string().optional(),
+    position: z.number().int().min(1).optional()
   })
 })
 
