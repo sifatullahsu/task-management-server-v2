@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose'
 import { iList, iListModel } from './list.interface'
 
-const tasskSchema = new Schema<iList, iListModel>(
+const listSchema = new Schema<iList, iListModel>(
   {
     title: { type: String, required: true, trim: true },
     position: { type: Number, required: true },
@@ -13,6 +13,15 @@ const tasskSchema = new Schema<iList, iListModel>(
   }
 )
 
-const List = model<iList, iListModel>('List', tasskSchema)
+listSchema.statics.validatePosition = async (session, owner, position) => {
+  const maxPositionDoc = await List.findOne({ owner }, {}, { sort: { position: -1 }, session })
+  const maxPosition = maxPositionDoc ? maxPositionDoc.position : 0
+
+  if (position > maxPosition) {
+    throw new Error('Cannot move the document beyond the maximum position.')
+  }
+}
+
+const List = model<iList, iListModel>('List', listSchema)
 
 export default List

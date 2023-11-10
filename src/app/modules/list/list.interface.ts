@@ -1,4 +1,4 @@
-import { Model } from 'mongoose'
+import mongoose, { ClientSession, Model } from 'mongoose'
 import { iId } from '../../../global/types'
 
 export type iList = {
@@ -7,4 +7,10 @@ export type iList = {
   owner: iId
 }
 
-export type iListModel = Model<iList>
+export type iListModel = {
+  validatePosition(
+    session: ClientSession,
+    owner: string | mongoose.Types.ObjectId,
+    position: number
+  ): Promise<void>
+} & Model<iList>

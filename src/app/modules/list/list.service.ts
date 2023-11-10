@@ -1,4 +1,4 @@
-import mongoose, { FilterQuery } from 'mongoose'
+import mongoose from 'mongoose'
 import { IQueryMaker } from 'mongoose-query-maker'
 import { iMeta, iReturnWithMeta } from '../../../global/types'
 import { iJwtUser } from '../../../interface'
@@ -60,34 +60,30 @@ const updateData = async (id: string, data: Partial<iList>): Promise<iList | nul
 
       const { _id, owner, position } = previous
 
-      // Find the maximum position for documents with the same owner
-      const maxPositionDoc = await List.findOne({ owner }, {}, { sort: { position: -1 }, session })
-      const maxPosition = maxPositionDoc ? maxPositionDoc.position : 0
-
       if (data.position !== position) {
-        if (data.position > maxPosition) {
-          throw new Error('Cannot move the document beyond the maximum position.')
-        }
+        // Validate position
+        await List.validatePosition(session, owner, data.position)
 
         // Determine whether to increment or decrement positions
         const increment = data.position > position ? -1 : 1
 
-        // Define the query to update positions for affected documents
-        const query: FilterQuery<iList> = {
-          $and: [
-            { owner: { $eq: owner } },
-            { _id: { $ne: _id } },
-            {
-              position:
-                increment === 1
-                  ? { $gte: data.position, $lte: position }
-                  : { $gt: position, $lte: data.position }
-            }
-          ]
-        }
-
         // Use updateMany to adjust positions for affected documents
-        await List.updateMany(query, { $inc: { position: increment } }, { session })
+        await List.updateMany(
+          {
+            $and: [
+              { owner: { $eq: owner } },
+              { _id: { $ne: _id } },
+              {
+                position:
+                  increment === 1
+                    ? { $gte: data.position, $lte: position }
+                    : { $gt: position, $lte: data.position }
+              }
+            ]
+          },
+          { $inc: { position: increment } },
+          { session }
+        )
       }
     }
 
