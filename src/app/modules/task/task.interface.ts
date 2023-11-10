@@ -1,4 +1,4 @@
-import { Model } from 'mongoose'
+import mongoose, { ClientSession, Model } from 'mongoose'
 import { iId } from '../../../global/types'
 
 export type iTask = {
@@ -10,4 +10,12 @@ export type iTask = {
   owner: iId
 }
 
-export type iTaskModel = Model<iTask>
+export type iTaskModel = {
+  validatePosition(
+    session: ClientSession,
+    owner: string | mongoose.Types.ObjectId,
+    list: string | mongoose.Types.ObjectId,
+    position: number,
+    additionalPosition: number
+  ): Promise<void>
+} & Model<iTask>

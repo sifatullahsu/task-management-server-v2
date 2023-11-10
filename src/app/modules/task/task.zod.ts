@@ -16,7 +16,7 @@ const updateData = z.object({
     title: z.string().optional(),
     description: z.string().optional(),
     priority: z.string().optional(),
-    position: z.number().optional(),
+    position: z.number().int().min(1).optional(),
     list: z.string().optional()
   })
 })

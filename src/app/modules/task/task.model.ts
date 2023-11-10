@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose'
 import { iTask, iTaskModel } from './task.interface'
 
-const tasskSchema = new Schema<iTask, iTaskModel>(
+const taskSchema = new Schema<iTask, iTaskModel>(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: '' },
@@ -16,6 +16,22 @@ const tasskSchema = new Schema<iTask, iTaskModel>(
   }
 )
 
-const Task = model<iTask, iTaskModel>('Task', tasskSchema)
+taskSchema.statics.validatePosition = async (session, owner, list, position, additionalPosition) => {
+  const maxPosition = await Task.findOne(
+    { owner, list },
+    { position: 1 },
+    { sort: { position: -1 }, session }
+  )
+
+  if (!maxPosition) {
+    throw new Error('Unauthorized access.')
+  }
+
+  if (position > maxPosition.position + additionalPosition) {
+    throw new Error('Cannot move the document beyond the maximum position.')
+  }
+}
+
+const Task = model<iTask, iTaskModel>('Task', taskSchema)
 
 export default Task

@@ -59,6 +59,69 @@ const updateData = async (id: string, data: Partial<iTask>): Promise<iTask | nul
   try {
     session.startTransaction()
 
+    if (data.position && data.list) {
+      // Get the previous data of the document being updated
+      const previous = await Task.findById(id, {}, { session })
+      if (!previous) throw new Error('Data not found.')
+
+      const { _id, owner, position, list } = previous
+
+      // Change position on the same list
+      if (data.list.toString() === list.toString()) {
+        if (data.position !== position) {
+          // Validate position
+          await Task.validatePosition(session, owner, list, data.position, 0)
+
+          // Determine whether to increment or decrement positions
+          const increment = data.position > position ? -1 : 1
+
+          // Use updateMany to adjust positions for affected documents
+          await Task.updateMany(
+            {
+              $and: [
+                { owner: { $eq: owner } },
+                { _id: { $ne: _id } },
+                {
+                  position:
+                    increment === 1
+                      ? { $gte: data.position, $lte: position }
+                      : { $gt: position, $lte: data.position }
+                }
+              ]
+            },
+            { $inc: { position: increment } },
+            { session }
+          )
+        }
+      }
+
+      // Change position on the diffrent list
+      else {
+        // Validate position
+        await Task.validatePosition(session, owner, data.list, data.position, 1)
+
+        // Update position: [prev list, new list]
+        await Task.bulkWrite(
+          [
+            {
+              updateMany: {
+                filter: { owner, list, position: { $gt: position } },
+                update: { $inc: { position: -1 } }
+              }
+            },
+            {
+              updateMany: {
+                filter: { owner, list: data.list, position: { $gte: data.position } },
+                update: { $inc: { position: 1 } }
+              }
+            }
+          ],
+          { session }
+        )
+      }
+    }
+
+    // Update the document with the provided data
     const result = await Task.findByIdAndUpdate(id, data, {
       runValidators: true,
       new: true,
