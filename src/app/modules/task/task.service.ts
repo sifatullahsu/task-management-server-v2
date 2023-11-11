@@ -79,7 +79,8 @@ const updateData = async (id: string, data: Partial<iTask>): Promise<iTask | nul
           await Task.updateMany(
             {
               $and: [
-                { owner: { $eq: owner } },
+                { owner },
+                { list },
                 { _id: { $ne: _id } },
                 {
                   position:
@@ -152,7 +153,7 @@ const deleteData = async (id: string): Promise<iTask | null> => {
 
     // step 02: Update list position to -1
     await Task.updateMany(
-      { $and: [{ owner: { $eq: owner } }, { list: { $eq: list } }, { position: { $gt: position } }] },
+      { owner, list, position: { $gt: position } },
       { $inc: { position: -1 } },
       { session }
     )
