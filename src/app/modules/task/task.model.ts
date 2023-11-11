@@ -17,17 +17,14 @@ const taskSchema = new Schema<iTask, iTaskModel>(
 )
 
 taskSchema.statics.validatePosition = async (session, owner, list, position, additionalPosition) => {
-  const maxPosition = await Task.findOne(
+  const maxPositionDoc = await Task.findOne(
     { owner, list },
-    { position: 1 },
+    { position: 1, _id: 0 },
     { sort: { position: -1 }, session }
   )
+  const maxPosition = maxPositionDoc ? maxPositionDoc.position : 0
 
-  if (!maxPosition) {
-    throw new Error('Unauthorized access.')
-  }
-
-  if (position > maxPosition.position + additionalPosition) {
+  if (position > maxPosition + additionalPosition) {
     throw new Error('Cannot move the document beyond the maximum position.')
   }
 }

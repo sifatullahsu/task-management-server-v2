@@ -14,7 +14,11 @@ const listSchema = new Schema<iList, iListModel>(
 )
 
 listSchema.statics.validatePosition = async (session, owner, position) => {
-  const maxPositionDoc = await List.findOne({ owner }, {}, { sort: { position: -1 }, session })
+  const maxPositionDoc = await List.findOne(
+    { owner },
+    { position: 1, _id: 0 },
+    { sort: { position: -1 }, session }
+  )
   const maxPosition = maxPositionDoc ? maxPositionDoc.position : 0
 
   if (position > maxPosition) {
